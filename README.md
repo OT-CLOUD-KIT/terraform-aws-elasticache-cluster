@@ -8,7 +8,7 @@ A reusable Terraform module to provision a **highly available Redis cluster usin
 
 ---
 
-## 🔧 Features
+##  Features
 
 - Clustered Redis (multi-node, multi-AZ)
 - Automatic failover and encryption support
@@ -19,6 +19,7 @@ A reusable Terraform module to provision a **highly available Redis cluster usin
 ---
 
 ##  Architecture
+<img width="1154" height="782" alt="image" src="https://github.com/user-attachments/assets/878c5fa0-0fb5-42e1-98c0-d48ced1b133a" />
 
 
 
@@ -33,6 +34,7 @@ A reusable Terraform module to provision a **highly available Redis cluster usin
 | <a name="provider_aws"></a> [aws](#provider\_aws) | 5.82.2   |
 | <a name="terraform_module"></a> [Terraform](Terraform\module) | >= 1.12.1|
 
+___
 ## Usage
 
 ```hcl
