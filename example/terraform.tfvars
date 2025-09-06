@@ -1,4 +1,3 @@
-aws_region = "us-east-1"
 
 # General Settings
 name = "redis-cluster"
@@ -82,19 +81,7 @@ aws_security_group_variables = [
   }
 ]
 
-
-env      = "d"
-bu       = "BP"
-app      = "db"
-program  = "OT"
-resource = "elatic"
-team     = "devops"
-region   = "us-east-1"
-
-enabled_features        = ["elastic"]
-create                  = true
-random_alphanumeric_len = 2
-special                 = false
-upper                   = false
-number                  = true
-gen_no_of_names         = 1
+env  = "dev"
+owner = "opstree"
+app = "otcloud-kit"
+region = "us-east-1"

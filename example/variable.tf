@@ -1,7 +1,4 @@
-variable "aws_region" {
-  description = "AWS region"
-  type        = string
-}
+
 
 variable "name" {
   description = "ElastiCache name prefix"
@@ -199,106 +196,24 @@ variable "aws_security_group_variables" {
 
 
 variable "env" {
-  type        = string
-  description = "Environment (d, p, q, s, g)"
-  default     = "p"
-  validation {
-    condition     = contains(["d", "p", "q", "s", "g"], var.env)
-    error_message = "env must be one of: d, p, q, s, g"
-  }
+  type = string
+  default = "dev"
+  
 }
 
-variable "bu" {
-  type        = string
-  description = "Business unit (max 10 characters)"
-  default     = "BP"
-  validation {
-    condition     = length(var.bu) <= 10
-    error_message = "Business unit name must be <= 10 characters"
-  }
+variable "owner" {
+  type = string
+  default = "opstree"
 }
 
 variable "app" {
-  type        = string
-  description = "Application name (max 10 characters)"
-  default     = "database"
-  validation {
-    condition     = length(var.app) <= 10
-    error_message = "App name must be <= 10 characters"
-  }
+  type = string
+  default = "otcloud-kit"
+  
 }
-
-variable "program" {
-  type        = string
-  description = "Program name (e.g., ot-cloud-kit)"
-  default     = "OT"
-}
-
-variable "resource" {
-  type        = string
-  description = "Optional resource name (max 15 characters)"
-  default     = ""
-  validation {
-    condition     = length(var.resource) <= 15
-    error_message = "Resource name must be <= 15 characters"
-  }
-}
-
-variable "team" {
-  type        = string
-  description = "Team owner or contact (e.g., devops@example.com)"
-  default     = "infra"
-}
-
 variable "region" {
   type        = string
   description = "AWS Region where resources will be deployed"
   default     = "us-east-1"
 }
 
-# Optional Random Name Generator
-variable "enabled_features" {
-  type        = list(string)
-  description = "List of enabled features for name generation"
-  default     = []
-}
-
-variable "create" {
-  type        = bool
-  description = "Whether to create resources (module-level toggle)"
-  default     = true
-}
-
-variable "random_alphanumeric_len" {
-  type        = number
-  description = "Length of random alphanumeric string to append (1 to 4)"
-  default     = 2
-  validation {
-    condition     = var.random_alphanumeric_len >= 1 && var.random_alphanumeric_len <= 4
-    error_message = "Length must be between 1 and 4"
-  }
-}
-
-variable "special" {
-  type        = bool
-  description = "Include special characters in generated names"
-  default     = false
-}
-
-variable "upper" {
-  type        = bool
-  description = "Include uppercase characters in generated names"
-  default     = false
-}
-
-variable "number" {
-  type        = bool
-  description = "Include numbers in generated names"
-  default     = true
-}
-
-variable "gen_no_of_names" {
-  type        = number
-  description = "How many names to generate using random naming logic"
-  default     = 1
-}

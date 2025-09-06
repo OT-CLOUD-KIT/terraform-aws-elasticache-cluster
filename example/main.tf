@@ -1,29 +1,3 @@
-provider "aws" {
-  region = var.aws_region
-}
-
-
-
-module "naming" {
-  source   = "git@github.com:OT-CLOUD-KIT/terraform-aws-naming.git?ref=dev"
-  bu       = var.bu
-  env      = var.env
-  app      = var.app
-  resource = var.resource
-}
-
-module "standard_tags" {
-  source = "git@github.com:OT-CLOUD-KIT/terraform-aws-standard-tagging.git?ref=dev"
-
-  bu      = var.bu
-  program = var.program
-  app     = var.app
-  team    = var.team
-  region  = var.region
-  env     = var.env
-}
-
-
 
 module "elasticache_security_group" {
   count                        = var.enable_public_web_security_group_resource ? 1 : 0
@@ -55,12 +29,9 @@ module "elasticache" {
   redis_engine_version       = var.redis_engine_version
   port                       = var.port
 
-  bu      = var.bu
-  program = var.program
-  app     = var.app
-  env     = var.env
-  team    = var.team
-  region  = var.region
+  env = var.env
+  owner = var.owner
+  app = var.app
   snapshot_arns                 = var.snapshot_arns
   snapshot_name                 = var.snapshot_name
   maintenance_window            = var.maintenance_window
