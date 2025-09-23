@@ -1,116 +1,169 @@
-# ElastiCache_cluster
 
-[![Opstree Solutions][opstree_avatar]][opstree_homepage]<br/>[Opstree Solutions][opstree_homepage] 
+# Terraform AWS ElastiCache Redis Cluster
 
-  [opstree_homepage]: https://opstree.github.io/
-  [opstree_avatar]: https://img.cloudposse.com/150x150/https://github.com/opstree.png
 
-- This terraform module will create a complete ElastiCache cluster setup.
-- This project is a part of opstree's ot-aws initiative for terraform modules.
+A reusable Terraform module to provision a **highly available Redis cluster using AWS ElastiCache** with support for encryption, parameter groups, snapshots, and more.
 
+> **Note:** This module provisions a **clustered, multi-AZ Redis setup** ideal for **staging and production workloads**.
+
+---
+
+##  Features
+
+- Clustered Redis (multi-node, multi-AZ)
+- Automatic failover and encryption support
+- Custom Redis parameter group support
+- Snapshot configuration and KMS integration
+- VPC private subnet support and SG customization
+
+---
+
+##  Architecture
+<img width="1154" height="782" alt="image" src="https://github.com/user-attachments/assets/878c5fa0-0fb5-42e1-98c0-d48ced1b133a" />
+
+
+
+---
+
+
+
+## Providers
+
+| Name                                              | Version  |
+|---------------------------------------------------|----------|
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 5.82.2   |
+| <a name="terraform_module"></a> [Terraform](Terraform\module) | >= 1.12.1|
+
+___
 ## Usage
 
-```sh
-$   cat main.tf
-/*-------------------------------------------------------*/
-module "redis_cluster" {
-  source                         = "../redis"
-  node_groups                    = 1
-  replicas_per_node_group        = 1
-  redis_node_type                = "cache.t2.micro"
-  redis_version                  = "5.0.5"
-  redis_port                     = 6379
-  redis_parameter_group_name     = "default.redis5.0.cluster.on"
-  redis_maintenance_window       = "fri:08:00-fri:09:00"
-  redis_snapshot_window          = "06:30-07:30"
-  redis_snapshot_retention_limit = 0
-  transit_encryption_enabled     = true
-  at_rest_encryption_enabled     = true
-  automatic_failover_enabled     = true
-  subnet_ids                     = ["subnet-eba21aa6", "subnet-83e712dc"]
-  namespace                      = "elastiCache"
-  replication_group_id           = "elastiCache"
-  env                            = "opstree-dev"
-  security_group_ids             = [aws_security_group.frontend_sg.id]
-}
-/*-------------------------------------------------------*/
-resource "aws_security_group" "frontend_sg" {
-  name = "Frontend Security Group"
-  vpc_id      = "vpc-fc5cc595"
+```hcl
+module "redis_clustered" {
+  source = "OT-CLOUD-KIT/terraform-aws-elasticache-cluster"
 
-  ingress {
-      from_port = 6379
-      to_port = 6379
-      protocol = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
-  }
-  egress {
-      from_port = 0
-      to_port = 0
-      protocol = "-1"
-      cidr_blocks = ["0.0.0.0/0"]
+  aws_region                   = "us-east-1"
+  name                         = "redis-cluster"
+  subnet_ids                   = ["subnet-0917528eb0073ff53", "subnet-0507f737d40c35d3a"]
+  tags                         = {
+    Environment = "dev"
+    Owner       = "nikita"
   }
 
-  tags = {
-    Terraform = "true"
-  }
+  transit_encryption_enabled   = true
+  at_rest_encryption_enabled   = true
+  auto_minor_version_upgrade   = true
+  automatic_failover_enabled   = true
+  multi_az_enabled             = true
+  cluster_mode_enabled         = true
+  node_type                    = "cache.t3.medium"
+  redis_engine_version         = "7.0"
+  port                         = 6379
+  auth_token                   = null
+  kms_key_id                   = null
+
+  parameter_group_enabled      = true
+  parameter_group_name         = ""
+  redis_family                 = "redis7"
+  parameter = [
+    {
+      name  = "latency-tracking"
+      value = "yes"
+    }
+  ]
+
+  security_group_ids           = ["sg-04b583e203d73a91f"]
+
+  snapshot_arns                = []
+  snapshot_name                = null
+  snapshot_window              = "03:00-04:00"
+  snapshot_retention_limit     = 1
+  maintenance_window           = "sun:05:00-sun:09:00"
+  notification_topic_arn       = null
+  apply_immediately            = true
+  final_snapshot_identifier    = "final-snapshot"
+
+  replicas_per_node_group      = 1
+  num_node_groups              = 2
+
+  replication_group_description = "Clustered Redis for development"
 }
-/*-------------------------------------------------------*/
-/*-------------------------------------------------------*/
+
 ```
 
-```sh
-$   cat output.tf
-/*-------------------------------------------------------*/
-output "auth_token" {
-  value = module.redis_cluster.auth_token
-}
-/*-------------------------------------------------------*/
-```
-## Inputs
 
-| Name | Description | Type | Default | Required |
-|------|-------------|:----:|:-----:|:-----:|
-| namespace | The name of the redis cluster. | `string` | `null` | yes |
-| env | The name of environment, this is helpful if you have more than 1 cluster. | `string` | `null` | yes |
-| subnet_ids | The subnets where the redis cluster is deployed. | `string` | `null` | yes |
-| replication_group_id | The ID of the replication group to which this cluster should belong. | `string` | `null` | yes |
-| redis_node_type | The instance size of the redis cluster. | `string` | `null` | yes |
-| redis_port | The redis port. | `string` | `6379` | no |
-| redis_parameter_group_name | The Name of the parameter group to associate with this cache cluster. | `string` | `null` | yes |
-| redis_version | The Version number of the cache engine to be used. | `string` | `3.2.10` | no |
-| redis_snapshot_retention_limit | The number of days for which ElastiCache will retain automatic cache cluster snapshots before deleting them. | `string` | `0` | no |
-| redis_maintenance_window | Specifies the weekly time range for when maintenance on the cache cluster is performed. | `string` | `null` | no |
-| redis_snapshot_window | The daily time range (in UTC) during which ElastiCache will begin taking a daily snapshot of your cache cluster. | `string` | `null` | no |
-| transit_encryption_enabled | Whether to enable encryption in transit. | `bool` | `false` | no |
-| at_rest_encryption_enabled | Whether to enable encryption in rest. | `bool` | `false` | no |
-| automatic_failover_enabled |Specifies whether a read-only replica will be automatically promoted to read/write primary if the existing primary fails. | `bool` | `false` | no |
-| security_group_ids | Security groups associated with the cache cluster. | `list` | `null` | no |
-| replicas_per_node_group | Number of nodes replicas to create in the cluster. | `string` | `null` | yes |
-| node_groups | Number of nodes groups to create in the cluster. | `string` | `null` | yes |
+> **Note:**  
+> The above example demonstrates how to use the module. All variables, resources, and outputs used here are already defined within this module.
 
-## Outputs
+## Resources
 
-| Name | Description |
-|------|-------------|
-| primary_endpoint_address | The address of the replication group configuration endpoint when cluster mode is enabled |
-| db_instance_port | Port of the DB instance |
+| Name                                                                                                                                                    | Type                                                                                  |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| [aws\_elasticache\_subnet\_group.elasticache](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/elasticache_subnet_group)     | Creates a subnet group for Redis using specified subnets                              |
+| [random\_string.auth\_token](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string)                                     | Generates an auth token if transit encryption is enabled                              |
+| [aws\_elasticache\_parameter\_group.default](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/elasticache_parameter_group)   | Creates a custom parameter group if `parameter_group_enabled` is true                 |
+| [aws\_elasticache\_replication\_group.redis](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/elasticache_replication_group) | Creates the Redis cluster with support for replicas, shards, failover, and encryption |
 
 
-## Related Projects
 
-Check out these related projects.
 
-- [network_skeleton](https://gitlab.com/ot-aws/terrafrom_v0.12.21/network_skeleton) - Terraform module for providing a general purpose Networking solution
-- [security_group](https://gitlab.com/ot-aws/terrafrom_v0.12.21/security_group) - Terraform module for creating dynamic Security groups
-- [eks](https://gitlab.com/ot-aws/terrafrom_v0.12.21/eks) - Terraform module for creating elastic kubernetes cluster.
-- [HA_ec2_alb](https://gitlab.com/ot-aws/terrafrom_v0.12.21/ha_ec2_alb.git) - Terraform module for creating a Highly available setup of an EC2 instance with quick disater recovery.
-- [HA_ec2](https://gitlab.com/ot-aws/terrafrom_v0.12.21/ha_ec2.git) - Terraform module for creating a Highly available setup of an EC2 instance with quick disater recovery.
-- [rolling_deployment](https://gitlab.com/ot-aws/terrafrom_v0.12.21/rolling_deployment.git) - This terraform module will orchestrate rolling deployment.
 
-### Contributors
 
-[![Shweta Tyagi][shweta_avatar]][shweta_homepage]<br/>[Shweta Tyagi][shweta_homepage] 
 
-  [shweta_homepage]: https://github.com/shwetatyagi-ot
-  [shweta_avatar]: https://img.cloudposse.com/75x75/https://github.com/shwetatyagi-ot.png
+
+## Input
+| Name                                                                                                                       | Description                                              | Type                | Default                                            | Required |
+| -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------- | -------------------------------------------------- | :------: |
+| <a name="input_aws_region"></a> [aws\_region](#input_aws_region)                                                           | AWS region to deploy the Redis cluster                   | `string`            | `"us-east-1"`                                      |     yes  |
+| <a name="input_name"></a> [name](#input_name)                                                                              | Name prefix for all Redis resources                      | `string`            | n/a                                                |     yes   |
+| <a name="input_subnet_ids"></a> [subnet\_ids](#input_subnet_ids)                                                           | List of private subnet IDs                               | `list(string)`      | n/a                                                |     yes  |
+| <a name="input_tags"></a> [tags](#input_tags)                                                                              | Tags to assign to all resources                          | `map(string)`       | `{ Environment = "dev", Owner = "nikita" }`        |     No    |
+| <a name="input_transit_encryption_enabled"></a> [transit\_encryption\_enabled](#input_transit_encryption_enabled)          | Enable encryption in transit (TLS)                       | `bool`              | `true`                                             |     No   |
+| <a name="input_at_rest_encryption_enabled"></a> [at\_rest\_encryption\_enabled](#input_at_rest_encryption_enabled)         | Enable encryption at rest                                | `bool`              | `true`                                             |     No    |
+| <a name="input_auto_minor_version_upgrade"></a> [auto\_minor\_version\_upgrade](#input_auto_minor_version_upgrade)         | Allow automatic minor Redis engine upgrades              | `bool`              | `true`                                             |     No    |
+| <a name="input_automatic_failover_enabled"></a> [automatic\_failover\_enabled](#input_automatic_failover_enabled)          | Enable automatic failover for HA                         | `bool`              | `true`                                             |     No   |
+| <a name="input_multi_az_enabled"></a> [multi\_az\_enabled](#input_multi_az_enabled)                                        | Deploy nodes across multiple AZs                         | `bool`              | `true`                                             |     No   |
+| <a name="input_cluster_mode_enabled"></a> [cluster\_mode\_enabled](#input_cluster_mode_enabled)                            | Enable Redis Cluster mode (sharding)                     | `bool`              | `true`                                             |     yes   |
+| <a name="input_node_type"></a> [node\_type](#input_node_type)                                                              | Instance type for Redis nodes                            | `string`            | `"cache.t3.medium"`                                |     yes   |
+| <a name="input_redis_engine_version"></a> [redis\_engine\_version](#input_redis_engine_version)                            | Redis engine version                                     | `string`            | `"7.0"`                                            |     No   |
+| <a name="input_port"></a> [port](#input_port)                                                                              | Port Redis listens on                                    | `number`            | `6379`                                             |     No   |
+| <a name="input_auth_token"></a> [auth\_token](#input_auth_token)                                                           | Redis AUTH token (optional if encryption enabled)        | `string`            | `null`                                             |     No   |
+| <a name="input_kms_key_id"></a> [kms\_key\_id](#input_kms_key_id)                                                          | KMS key ID for encryption at rest                        | `string`            | `null`                                             |     No   |
+| <a name="input_parameter_group_enabled"></a> [parameter\_group\_enabled](#input_parameter_group_enabled)                   | Whether to use a custom parameter group                  | `bool`              | `true`                                             |    No    |
+| <a name="input_parameter_group_name"></a> [parameter\_group\_name](#input_parameter_group_name)                            | Name of the parameter group (optional if auto-generated) | `string`            | `""`                                               |     No   |
+| <a name="input_redis_family"></a> [redis\_family](#input_redis_family)                                                     | Redis parameter group family (e.g. `redis7`)             | `string`            | `"redis7"`                                         |     yes   |
+| <a name="input_parameter"></a> [parameter](#input_parameter)                                                               | List of custom Redis parameters                          | `list(map(string))` | `[ { name = "latency-tracking", value = "yes" } ]` |     No    |
+| <a name="input_security_group_ids"></a> [security\_group\_ids](#input_security_group_ids)                                  | List of security group IDs                               | `list(string)`      | `["sg-04b583e203d73a91f"]`                         |     yes   |
+| <a name="input_snapshot_arns"></a> [snapshot\_arns](#input_snapshot_arns)                                                  | List of snapshot ARNs to restore from                    | `list(string)`      | `[]`                                               |     No    |
+| <a name="input_snapshot_name"></a> [snapshot\_name](#input_snapshot_name)                                                  | Name of the snapshot to restore                          | `string`            | `null`                                             |     No   |
+| <a name="input_maintenance_window"></a> [maintenance\_window](#input_maintenance_window)                                   | Preferred maintenance window                             | `string`            | `"sun:05:00-sun:09:00"`                            |     No    |
+| <a name="input_notification_topic_arn"></a> [notification\_topic\_arn](#input_notification_topic_arn)                      | SNS topic ARN for maintenance events                     | `string`            | `null`                                             |     No    |
+| <a name="input_snapshot_window"></a> [snapshot\_window](#input_snapshot_window)                                            | Snapshot backup window                                   | `string`            | `"03:00-04:00"`                                    |     No   |
+| <a name="input_snapshot_retention_limit"></a> [snapshot\_retention\_limit](#input_snapshot_retention_limit)                | Number of days to retain snapshots                       | `number`            | `1`                                                |     No    |
+| <a name="input_apply_immediately"></a> [apply\_immediately](#input_apply_immediately)                                      | Apply changes immediately                                | `bool`              | `true`                                             |     No   |
+| <a name="input_final_snapshot_identifier"></a> [final\_snapshot\_identifier](#input_final_snapshot_identifier)             | Snapshot name to create before deletion                  | `string`            | `"final-snapshot"`                                 |     No    |
+| <a name="input_replicas_per_node_group"></a> [replicas\_per\_node\_group](#input_replicas_per_node_group)                  | Number of replicas per shard                             | `number`            | `1`                                                |     yes   |
+| <a name="input_num_node_groups"></a> [num\_node\_groups](#input_num_node_groups)                                           | Number of shards (node groups)                           | `number`            | `2`                                                |     yes    |
+| <a name="input_replication_group_description"></a> [replication\_group\_description](#input_replication_group_description) | Description for the Redis cluster                        | `string`            | `"Clustered Redis for development"`                |     No    |
+
+
+___
+
+
+## Output
+| Name                                                                                                          | Description                                                   |
+| ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| <a name="output_replication_group_id"></a> [replication\_group\_id](#output_replication_group_id)             | The ID of the ElastiCache replication group                   |
+| <a name="output_primary_endpoint_address"></a> [primary\_endpoint\_address](#output_primary_endpoint_address) | The primary write endpoint of the Redis cluster               |
+| <a name="output_reader_endpoint_address"></a> [reader\_endpoint\_address](#output_reader_endpoint_address)    | The read-only endpoint (reader endpoint) of the Redis cluster |
+| <a name="output_subnet_group_name"></a> [subnet\_group\_name](#output_subnet_group_name)                      | The name of the ElastiCache subnet group used by the cluster  |
+
+
+
+___
+
+
+## Contributors
+
+- [Piyush Upadhyay](https://github.com/piiiyuushh)
+- [Nikita Joshi](https://github.com/jnikita19)
+
